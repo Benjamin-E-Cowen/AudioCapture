@@ -1,0 +1,149 @@
+<html>
+	<head>
+
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+		<style type="text/css">
+
+			.center-screen {
+	  			display: flex;
+	  			justify-content: center;
+	  			align-items: center;
+	  			text-align: center;
+	  			min-height: 100vh;
+
+			}
+
+			#circle {
+      			width: 200px;
+      			height: 200px;
+      			-webkit-border-radius: 125px;
+      			-moz-border-radius: 125px;
+      			border-radius: 10000px;
+      			border-style: inset;
+
+      			position: fixed;
+    		}
+
+    		img {
+    			width: 100%;
+    			height: auto;
+    			max-width: 100%;
+			}
+
+			.moveableOject {
+      			width: 50px;
+      			height: 50px;
+      			position: absolute;
+
+      		}
+
+
+		</style>
+	</head>
+
+	<body style="background-color: white">
+		<div id = "#center" class="center-screen">
+			<div id="circle">  </div>
+
+		</div>
+	</body>
+
+	<script>
+		var theme = "Example";
+		var folder = "../Themes/" + theme;
+		var number_of_items_level = 3;
+		var smoothness = 95;
+
+		function find_volume(data)	{
+			var sum = 0;
+			// Do a root-mean-square on the samples: sum up the squares...
+			data.forEach(p => sum += p*p);
+		    // ... then take the square root of the sum.
+		    var rms =  Math.sqrt(sum / data.length);
+		    return rms;	
+		}
+		function displace(displacement) {
+			var init_displacement = displacement;
+			if (displacement < 10) {
+				displacement = 5;
+			}
+			displacement = (100-smoothness) / 100 * displacement + (smoothness) / 100 * parseFloat( $("#circle").css('border-width'));
+			
+
+
+			$("#circle").stop(true).css({	
+			 	'border-width': displacement + 'px' ,
+			 });			
+
+			if (init_displacement > 10) {
+				var total_on_screen = 0;
+				$(".moveableOject").each(function (index, item)  {
+					if ($(item).css('opacity') <= .1) {
+						console.log("We trying");
+						$(item).remove();
+					}
+					else {
+						total_on_screen +=1;
+					}
+				});
+
+
+
+				if (Math.floor(Math.random() * 10) < number_of_items_level) {
+	 			var thrown_item = document.createElement("div"); 
+  				thrown_item.setAttribute("class", "moveableOject");
+  				var thrown_item_image = document.createElement("img");
+
+  				thrown_item_image.setAttribute("src", folder + "/" + Math.floor(Math.random() * 10) + ".png");
+  				thrown_item.append(thrown_item_image);
+  				$('.center-screen').append(thrown_item);
+
+
+
+  				var bottom_f = Math.random() * window.innerHeight;
+  				var left_f = Math.random() * window.innerWidth;
+
+  				var bottom_c = window.innerHeight/2 - 25;
+  				var left_c = window.innerWidth/2 - 25;
+
+  				var radius = 50;
+
+  				var angle = Math.atan2((bottom_f - bottom_c),(left_f - left_c));
+
+  				console.log(angle);
+  				var bottom_i = Math.sin(angle) * radius + bottom_c;
+  				var left_i = Math.cos(angle) * radius + left_c;
+  				$(thrown_item).css({'bottom':bottom_i , 'left' : left_i});
+  				$(thrown_item).animate({'bottom': bottom_f , 'left' : left_f , 'opacity': 0 }, 2000);
+			}
+		}
+
+		}
+
+
+		$(document).ready(function() {
+
+			const handleSuccess = function(stream) {
+				const context = new AudioContext();
+				const source = context.createMediaStreamSource(stream);
+				const processor = context.createScriptProcessor(256, 1, 1);
+				source.connect(processor);
+				processor.connect(context.destination);
+				processor.onaudioprocess = function(e) {
+					//data from input microphone stream
+				  	var data = e.inputBuffer.getChannelData(0);
+				  	var displacement = 0; 
+				  	displacement = find_volume(data);
+
+
+				  	displacement *= 500;
+				  	displace(displacement);
+				};
+			};
+			navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(handleSuccess);
+		});
+	</script>
+
+
+</html>
